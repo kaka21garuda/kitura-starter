@@ -50,16 +50,53 @@ public class Controller {
     // JSON Get request
     router.get("/json", handler: getJSON)
     
-    //GET request with URL encoded parameters
-    router.get("/hello/:name", handler: getName)
+    //GET request with name
+    router.get("/name/:name", handler: getName)
+    
+    router.post("/name", handler: postStringPosts)
+    
+    router.all("/name", allowPartialMatch: true, middleware: BodyParser())
   }
     
     //Parsing URL Encoded parameters
+    //    /name/Bob
     public func getName(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-        Log.debug("GET - /hello/:name")
+        Log.debug("GET - /name/:name")
         response.headers["Content-Type"] = "text/plain; charset=utf-8"
         let name = request.parameters["name"] ?? ""
         try response.send("Hello \(name)").end()
+    }
+    
+    //Parsing Query parameters
+    //    /name?name=Dan
+    public func getNameQuery(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
+        Log.debug("GET - /name")
+        response.headers["Content-Type"] = "text/plain; charset=utf-8"
+        let name = request.queryParameters["name"]
+        try! response.send("Hello \(name!), welcome to Kitura!").end()
+    }
+    
+    //StringPosts
+    public func postStringPosts(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
+        Log.debug("GET - /name")
+        response.headers["Content-Type"] = "text/plain; charset=utf-8"
+        let name = try! request.readString()
+        try! response.send("Hello \(name), this is readstring").end()
+    }
+    
+    public func jsonPostsrequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
+        guard let parseBody = request.body else {
+            next()
+            return
+        }
+        switch parseBody {
+        case .json(let jsonBody):
+            let name = jsonBody["name"].string
+            try! response.send("Hello \(name)").end()
+        default:
+            break
+        }
+        next()
     }
     
     public func getHello(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
